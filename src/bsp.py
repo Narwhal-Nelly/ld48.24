@@ -22,14 +22,14 @@ class box:
 		self.height = h
 		self.passages = []
 	def getMaxY(self):
-		return y + height - 1
+		return self.y + self.height - 1
 	def getMaxX(self):
-		return x + width - 1 #-1 for width of side
+		return self.x + self.width - 1 #-1 for width of side
 	def getMinY(self):
-		return y
+		return self.y
 	def getMinX(self):
-		return x
-
+		return self.x
+	#
 	def splitH(self,xsplit):
 		if self.width > xsplit:
 			boxA = box(
@@ -62,79 +62,99 @@ class box:
 		Ax1 = self.x
 		Ax2 = self.getMaxX()
 		Bx1 = other.x
-		Bx2 - other.getMaxX()
+		Bx2 = other.getMaxX()
 		overlap = 0
-
+		start = -1
+		#
 		delta21 = Ax2 - Bx1
 		delta22 = Ax2 - Bx2
 		overlapsR = sign(delta21) != sign(delta22)
 		if overlapsR:
+			start = Bx1
 			overlap = delta21
 			if overlap > other.width:
 				overlap = other.width
 			if overlap > self.width:
+				start = Ax1
 				overlap = self.width
 		delta21 = Bx2 - Ax1
 		delta22 = Bx2 - Ax2
 		overlapsL = sign(delta21) != sign(delta22)
 		if overlapsL:
+			start = Ax1
 			overlap = delta21
 			if overlap > other.width:
+				start = Bx1
 				overlap = other.width
 			if overlap > self.width:
 				overlap = self.width
 		# top-edge
 		if self.y - other.getMaxY() is 1:
 			if overlap !=0:
-				return ('top',overlap)
+				return ('top',start,overlap)
 			return None
 		# bottom-edge
 		if  other.y - self.getMaxY() is 1:
 			if overlap !=0:
-				return ('bottom',overlap)
+				return ('bottom',start,overlap)
 			return None
 		Ay1 = self.y
 		Ay2 = self.getMaxY()
 		By1 = other.y
 		By2 = self.getMaxY()
+		start = -1
 		overlap = 0
 		delta21 = Ay2 - By1
 		delta22 = Ay2 - By2
 		overlapsR = sign(delta21) != sign(delta22)
 		if overlapsR:
+			start = By1
 			overlap = delta21
 			if overlap > other.height:
-				overlap = other.height:
-			if overlap > self.height
-				overlap = self.height:
+				overlap = other.height
+			if overlap > self.height:
+				overlap = self.height
+				start = Ay1
 		delta21 = By2 - Ay1
 		delta22 = By2 - Ay2
 		overlapsL = sign(delta21) != sign(delta22)
 		if overlapsL:
+			start = Ay1
 			overlap = delta21
 			if overlap > other.height:
-				overlap = other.height:
-			if overlap > self.height
-				overlap = self.height:		
+				overlap = other.height
+				start = By1
+			if overlap > self.height:
+				overlap = self.height	
 		# left-edge
 		if self.x - other.getMaxX() is 1:
 			if overlap > 0:
-				return ('left',overlap)
+				return ('left',start,overlap)
 			return None
 		# right-edge
 		if other.x - self.getMaxX() is 1:
 			if overlap > 0:
-				return ('right',overlap)
+				return ('right',start,overlap)
 			return None
 		return None
-	def join(self,other,where):
-		if where is 'top':
+	def join(self,where):
+		start = where[1]
+		length = where[2]
+		if where[0] is 'top':
+			coords = (start,self.y)
+			self.passages.append( ('h',coords,length) )
 			return
-		if where is 'bottom':
+		if where[0] is 'bottom':
+			coords = (start,self.getMaxY())
+			self.passages.append( ('h',coords,length) )
 			return
-		if where is 'left':
+		if where[0] is 'left':
+			coords = (self.x,start)
+			self.passages.append( ('v',coords,length) )
 			return
-		if where is 'right':
+		if where[0] is 'right':
+			coords = (self.getMaxX(),start)
+			self.passages.append( ('v',coords,length) )
 			return
 		return 
 	def draw(self):
@@ -152,6 +172,28 @@ class box:
 		scr.addch(y,x+w-1,curses.ACS_URCORNER)
 		scr.addch(y+h-1,x,curses.ACS_LLCORNER)
 		scr.addch(y+h-1,x+w-1,curses.ACS_LRCORNER)
+		# passages
+		for p in self.passages:
+			length = p[2]
+			coords = p[1]
+			if p[0] is 'v':
+				scr.vline(coords[1],coords[0],' ',length-1)
+				'''
+				if scr.inch(coords[1],coords[0]+1)!=' ':
+					scr.addch(coords[1],coords[0],curses.ACS_LRCORNER)
+				else:
+					if scr.inch(coords[1],coords[0]-1)!=' ':
+						scr.addch(coords[1],coords[0],curses.ACS_LLCORNER)
+					else:
+						if scr.inch(coords[1]+length-1,coords[0]+1)!=' ':
+							scr.addch(coords[1],coords[0],curses.ACS_URCORNER)
+						else:
+							if scr.inch(coords[1]+length-1,coords[0]-1)!=' ':
+								scr.addch(coords[1],coords[0],curses.ACS_ULCORNER)
+				'''
+			if p[0] is 'h':
+				scr.hline(coords[1],coords[0],' ',length-1)
+
 	def __str__(self):
 		x = self.x
 		y = self.y
@@ -190,8 +232,19 @@ def split(box,minSize, depth = 5):
 		# maybe make this more 'random' in the future
 		for boxL in L:
 			for boxR in R:
-				if boxR.adjacentTo(boxL):
-					boxR.join(boxL)
+				adjR = boxR.adjacentTo(boxL)
+				if adjR:
+					adjL = boxL.adjacentTo(boxR)
+					#
+					start = adjR[1]
+					length = adjR[2]
+					portalSize = 4
+					if length > (portalSize+1):
+						newStart = random.randint(start+1,start+length-(portalSize+1))
+						#
+						boxR.join( (adjR[0],newStart,portalSize) )
+						boxL.join( (adjL[0],newStart,portalSize) )
+		return L + R
 
 
 
@@ -209,7 +262,7 @@ if __name__ == '__main__':
 	height = maxYX[0] - minYX[0]-5
 	boxes = [ box(3,3,width,height) ]
 	#print "DIM ",width,height
-	boxes = split(boxes[0],4,4)
+	boxes = split(boxes[0],8,4)
 	for b in boxes:
 		b.draw()
 		#print "box: ",`b.x`,`b.y`,`b.width`,`b.height`
