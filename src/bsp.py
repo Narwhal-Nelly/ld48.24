@@ -142,19 +142,19 @@ class box:
 		length = where[2]
 		if where[0] is 'top':
 			coords = (start,self.y)
-			self.passages.append( ('h',coords,length) )
+			self.passages.append( ('top',coords,length) )
 			return
 		if where[0] is 'bottom':
 			coords = (start,self.getMaxY())
-			self.passages.append( ('h',coords,length) )
+			self.passages.append( ('bottom',coords,length) )
 			return
 		if where[0] is 'left':
 			coords = (self.x,start)
-			self.passages.append( ('v',coords,length) )
+			self.passages.append( ('left',coords,length) )
 			return
 		if where[0] is 'right':
 			coords = (self.getMaxX(),start)
-			self.passages.append( ('v',coords,length) )
+			self.passages.append( ('right',coords,length) )
 			return
 		return 
 	def draw(self):
@@ -176,24 +176,23 @@ class box:
 		for p in self.passages:
 			length = p[2]
 			coords = p[1]
-			if p[0] is 'v':
-				scr.vline(coords[1],coords[0],' ',length-1)
-				'''
-				if scr.inch(coords[1],coords[0]+1)!=' ':
+			if length > 2:
+				if p[0] is 'left':
+					scr.vline(coords[1],coords[0],' ',length-1)
 					scr.addch(coords[1],coords[0],curses.ACS_LRCORNER)
-				else:
-					if scr.inch(coords[1],coords[0]-1)!=' ':
-						scr.addch(coords[1],coords[0],curses.ACS_LLCORNER)
-					else:
-						if scr.inch(coords[1]+length-1,coords[0]+1)!=' ':
-							scr.addch(coords[1],coords[0],curses.ACS_URCORNER)
-						else:
-							if scr.inch(coords[1]+length-1,coords[0]-1)!=' ':
-								scr.addch(coords[1],coords[0],curses.ACS_ULCORNER)
-				'''
-			if p[0] is 'h':
-				scr.hline(coords[1],coords[0],' ',length-1)
-
+					scr.addch(coords[1]+length-1,coords[0],curses.ACS_URCORNER)
+				if p[0] is 'right':
+					scr.vline(coords[1],coords[0],' ',length-1)
+					scr.addch(coords[1],coords[0],curses.ACS_LLCORNER)
+					scr.addch(coords[1]+length-1,coords[0],curses.ACS_ULCORNER)
+				if p[0] is 'top':
+					scr.hline(coords[1],coords[0],' ',length-1)
+					scr.addch(coords[1],coords[0],curses.ACS_LRCORNER)
+					scr.addch(coords[1],coords[0]+length-1,curses.ACS_LLCORNER)
+				if p[0] is 'bottom':
+					scr.hline(coords[1],coords[0],' ',length-1)
+					scr.addch(coords[1],coords[0],curses.ACS_URCORNER)
+					scr.addch(coords[1],coords[0]+length-1,curses.ACS_ULCORNER)
 	def __str__(self):
 		x = self.x
 		y = self.y
