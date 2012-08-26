@@ -229,6 +229,7 @@ def split(box,minSize, depth = 5):
 		L=split(subBoxes[0], minSize, depth - 1)
 		R=split(subBoxes[1], minSize, depth - 1)
 		# maybe make this more 'random' in the future
+		hasjoined = False
 		for boxL in L:
 			for boxR in R:
 				adjR = boxR.adjacentTo(boxL)
@@ -243,6 +244,10 @@ def split(box,minSize, depth = 5):
 						#
 						boxR.join( (adjR[0],newStart,portalSize) )
 						boxL.join( (adjL[0],newStart,portalSize) )
+						hasjoined = True
+						break
+			if hasjoined:
+				break;
 		return L + R
 
 
