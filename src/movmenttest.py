@@ -81,4 +81,4 @@ while loop is True:
 
 curses.endwin()
 
-print debug
+print (debug)

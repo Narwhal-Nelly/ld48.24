@@ -198,7 +198,7 @@ class box:
 		y = self.y
 		width = self.width
 		height = self.height
-		return "box["+`x`+','+`y`+','+`int(x+width)`+','+`int(y+height)`+"]"
+		return "box["+ x +','+ y +','+ str(int(x+width))+','+str(int(y+height))+"]"
 
 def split(box,minSize, depth = 5):
 	# make sure we didn't go too deep
